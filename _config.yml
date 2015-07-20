@@ -1,0 +1,14 @@
+# Site settings
+title: Renato Lucindo
+email: lucindo@me.com
+description: >
+  Renato Lucindo's blog
+baseurl: ""
+url: "http://lucindo.github.io"
+twitter_username: rlucindo
+github_username:  lucindo
+
+permalink: /blog/:year/:month/:day/:title/
+
+# Build settings
+markdown: kramdown

@@ -1,6 +1,6 @@
 ---
 layout: post
-title:  "Lambda, the ultime glue"
+title:  "Lambda, the ultimate glue"
 date:   2007-08-06 20:59:12
 categories: programming javascript
 comments: true

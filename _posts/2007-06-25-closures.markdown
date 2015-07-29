@@ -1,0 +1,113 @@
+---
+layout: post
+title:  "Closures"
+date:   2007-06-25 20:59:12
+categories: programming ruby
+comments: true
+---
+Existe a possibilidade de que na próxima versão de Java a linguagem ganhe suporte a [closures][closure-link1] (mais [aqui][closure-link2], e [aqui][closure-link3]). Pelo que andei vendo acho que dá para simular algo parecido com closures em C# também usando delegate. O mais legal de tudo isso é ver o que as pessoas acham que são closures e como usam.
+
+Um exemplo disso é o texto de [Martin Fowler][martin], que usa Ruby como linguagem para explicar o que é closure.
+
+Tá então closure é uma função que eu posso “salvar” umas variáveis e retornar outra função. Que ótimo! Agora não vou for ter que ficar fazendo _inner class_ e me preocupar com tudo seja _final_ quando for implementar meu callback! E na boa, é só pra isso que closure vai ser usado em Java se um dia entrar na linguagem.
+
+Mas closure vai muito além disso e infelizmente pouca gente vai continuar usando para construir abstrações. Porque o que falta em textos como o do Martin Fowler é dizer como usar isso para construir uma propriedade de closure, ou seja, uma operação ou conjunto de operações fechadas sobre si mesmas, adicionando assim um nivel de abstração.
+
+O exemplo clássico de closure usada dessa maneira aparece no começo do [SICP][sicp-link]. Livro altamente recomendado. Se possível veja os [videos][sicp-videos] também. Tudo disponível online.
+
+O exemplo é mais ou menos assim. Lisp quem três primitivas que manipulam pares:
+
+* `cons`: une 2 elementos em um par (um _cons_)
+* `car`: retorna o primeiro elemento do par
+* `cdr`: retorna o segundo elemento do par
+
+Usando Ruby, vamos dizer que temos essas três operações. Um `cons` pode unir dois elementos quaisquer, independente de tipo. Assim:
+
+{% highlight ruby %}
+car(cons(1, 4.2)) # retorna 1
+cdr(cons(1, 4.2)) # retorna 4.2
+{% endhighlight %}
+
+Com isso podemos construir listas, como feito em [Lisp][lisp-link], porque podemos fazer _cons_ de _cons_. Uma maneira (convensão) de se fazer isso é assim:
+
+{% highlight ruby %}
+# representa [1, 2, 3, 4]
+lst = cons(1, cons(2, cons(3, cons(4, nil))))
+{% endhighlight %}
+
+Com essa representação de lista podemos construir funções como por exemplo `mapcar` (que é bem parecida com _map_ de Ruby):
+
+{% highlight ruby %}
+def mapcar(proc, lst)
+  if lst == nil
+    nil
+  else
+    cons(proc.call(car(lst)), mapcar(proc, cdr(lst)))
+  end
+end
+{% endhighlight %}
+
+Com `mapcar` podemos fazer inúmeras coisas. Um exemplo bobo é a função `scale` que recebe um multiplicador e uma lista e retorna outra lista com todos os elementos multiplicados por esse fator:
+
+{% highlight ruby %}
+def scale(factor, lst)
+  mapcar(Proc.new {|e| e * factor}, lst)
+end
+{% endhighlight %}
+
+Da mesma forma que escrevemos `mapcar` podemos escrever outras funções genéricas sobre listas como `reduce` e `filter` (em Lisp o efeito de `filter` é obtido com _remove-if_).
+
+{% highlight ruby %}
+def reduce(proc, init, lst)
+  if lst == nil
+    init
+  else
+    proc.call(car(lst), reduce(proc, init, cdr(lst)))
+  end
+end
+
+def filter(proc, lst)
+  if lst == nil
+    nil
+  else
+    if proc.call(car(lst))
+      cons(car(lst), filter(proc, cdr(lst)))
+    else
+      filter(proc, cdr(lst))
+    end
+  end
+end
+{% endhighlight %}
+
+Tá, e o que tudo isso tem a ver com closures? Bom, essas funções e a infinidade de abstrações que podem ser construidas a partir [delas][mapreduce-link] utilizaram apenas um conjunto fechado de procedimento sobre listas: `cons`, `car` e `cdr`. Sendo que `cons` é completamente genérica, permitindo que se faça _cons_ de _cons_. Assim podemos escrever listas, árvores e estruturas cada vez mais complexas tendo como base essas funções simples.
+
+E como `cons`, `car` e `cdr` podem ser implementados? Closures, claro:
+
+{% highlight ruby %}
+def cons(a, b)
+  Proc.new { |first|
+    if first == true
+      a
+    else
+      b
+    end
+  }
+end
+
+def car(c)
+  c.call(true)
+end
+
+def cdr(c)
+  c.call(false)
+end
+{% endhighlight %}
+
+[closure-link1]: http://blogs.sun.com/ahe/resource/closures.pdf
+[closure-link2]: http://wiki.java.net/bin/view/Javapedia/Closures
+[closure-link3]: http://www.javac.info/
+[martin]: http://www.martinfowler.com/bliki/Closure.html
+[sicp-link]: http://mitpress.mit.edu/sicp/
+[sicp-videos]: http://swiss.csail.mit.edu/classes/6.001/abelson-sussman-lectures/
+[lisp-link]: https://en.wikipedia.org/wiki/Lisp_(programming_language)
+[mapreduce-link]: http://labs.google.com/papers/mapreduce.html
